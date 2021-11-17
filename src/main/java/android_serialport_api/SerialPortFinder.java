@@ -58,16 +58,45 @@ public class SerialPortFinder {
 	private static final String TAG = "SerialPort";
 
 	private Vector<Driver> mDrivers = null;
-
+	private File procfile = null;
 	Vector<Driver> getDrivers() throws IOException {
+		Log.d(TAG,"getDrivers");
 		if (mDrivers == null) {
 			mDrivers = new Vector<Driver>();
-			LineNumberReader r = new LineNumberReader(new FileReader("/proc/tty/drivers"));
+			procfile = new File("/proc/tty/drivers");
+
+			if (!procfile.canRead() || !procfile.canWrite()) {
+				Log.d(TAG,"can`t read drivers");
+				try {
+					Log.d(TAG,"In try");
+					/* Missing read/write permission, trying to chmod the file */
+					Process su;
+					Log.d(TAG,"su");
+					su = Runtime.getRuntime().exec("/system/bin/su");
+					String cmd = "chmod 666 " + procfile.getAbsolutePath() + "\r\n"
+							+ "exit\n";
+					su.getOutputStream().write(cmd.getBytes());
+					Log.d(TAG,"errer");
+					if ((su.waitFor() != 0) || !procfile.canRead()
+							|| !procfile.canWrite()) {
+						throw new SecurityException();
+					}
+					Log.d(TAG,"Read sucsess");
+				} catch (Exception e) {
+					Log.d(TAG,"Fail to read");
+					e.printStackTrace();
+
+					throw new SecurityException();
+				}
+			}
+			Log.d(TAG,"finish permission");
+			LineNumberReader r = new LineNumberReader(new FileReader(procfile));
 			String l;
 			while((l = r.readLine()) != null) {
 				// Issue 3:
 				// Since driver name may contain spaces, we do not extract driver name with split()
 				String drivername = l.substring(0, 0x15).trim();
+				Log.d(TAG,drivername);
 				String[] w = l.split(" +");
 				if ((w.length >= 5) && (w[w.length-1].equals("serial"))) {
 					Log.d(TAG, "Found new driver " + drivername + " on " + w[w.length-4]);

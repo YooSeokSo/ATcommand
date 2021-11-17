@@ -38,19 +38,26 @@ public class SerialPort {
 	private FileOutputStream mFileOutputStream;
 
 	public SerialPort(File device, int baudrate, int flags) throws SecurityException, IOException {
-
 		/* Check access permission */
+
 		if (!device.canRead() || !device.canWrite()) {
+			Log.d(TAG,"Can't readFile");
 			try {
 				/* Missing read/write permission, trying to chmod the file */
 				Process su;
 				su = Runtime.getRuntime().exec("/system/bin/su");
 				String cmd = "chmod 666 " + device.getAbsolutePath() + "\n"
 						+ "exit\n";
+				Log.d("SerialExam",cmd);
 				su.getOutputStream().write(cmd.getBytes());
-				if ((su.waitFor() != 0) || !device.canRead()
+				su.getOutputStream().close();
+				su.getInputStream().close();
+				su.getErrorStream().close();
+				if(su.waitFor() != 0){Log.d(TAG,"waitFor error");};
+			if (!device.canRead()
 						|| !device.canWrite()) {
-					throw new SecurityException();
+					//
+				throw new SecurityException();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
