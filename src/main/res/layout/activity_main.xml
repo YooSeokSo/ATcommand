@@ -16,10 +16,11 @@
         android:ems="10"
         android:inputType="textPersonName"
         android:minHeight="48dp"
-        android:text="port"
+        android:text="/dev/smd11"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:imeOptions="actionNext"/>
 
     <TextView
         android:id="@+id/textView2"
@@ -29,7 +30,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/atcommand" />
+        app:layout_constraintTop_toBottomOf="@+id/atcommand"/>
 
     <EditText
         android:id="@+id/atcommand"
@@ -41,7 +42,8 @@
         app:layout_constraintBottom_toTopOf="@+id/button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/port" />
+        app:layout_constraintTop_toBottomOf="@+id/port"
+        android:imeOptions="actionGo"/>
 
     <Button
         android:id="@+id/button"
@@ -52,6 +54,7 @@
         android:text="Button"
         app:layout_constraintBottom_toTopOf="@+id/textView2"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/atcommand" />
 </androidx.constraintlayout.widget.ConstraintLayout>

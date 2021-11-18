@@ -16,6 +16,7 @@
 
 package android_serialport_api;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -70,14 +71,16 @@ public class SerialPortFinder {
 				try {
 					Log.d(TAG,"In try");
 					/* Missing read/write permission, trying to chmod the file */
-					Process su;
-					Log.d(TAG,"su");
-					su = Runtime.getRuntime().exec("/system/bin/su");
-					String cmd = "chmod 666 " + procfile.getAbsolutePath() + "\r\n"
-							+ "exit\n";
-					su.getOutputStream().write(cmd.getBytes());
-					Log.d(TAG,"errer");
-					if ((su.waitFor() != 0) || !procfile.canRead()
+
+					Process su = Runtime.getRuntime().exec("su");
+					DataOutputStream outputStream = new DataOutputStream(su.getOutputStream());
+					String cmd = "chmod 666 " + procfile.getAbsolutePath() + "\n";
+					outputStream.write(cmd.getBytes());
+					outputStream.flush();
+					outputStream.writeBytes("exit\n");
+					outputStream.flush();
+					if(su.waitFor() != 0){Log.d(TAG,"waitFor error");};
+					if (!procfile.canRead()
 							|| !procfile.canWrite()) {
 						throw new SecurityException();
 					}
@@ -85,7 +88,6 @@ public class SerialPortFinder {
 				} catch (Exception e) {
 					Log.d(TAG,"Fail to read");
 					e.printStackTrace();
-
 					throw new SecurityException();
 				}
 			}

@@ -16,6 +16,7 @@
 
 package android_serialport_api;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -44,15 +45,13 @@ public class SerialPort {
 			Log.d(TAG,"Can't readFile");
 			try {
 				/* Missing read/write permission, trying to chmod the file */
-				Process su;
-				su = Runtime.getRuntime().exec("/system/bin/su");
-				String cmd = "chmod 666 " + device.getAbsolutePath() + "\n"
-						+ "exit\n";
-				Log.d("SerialExam",cmd);
-				su.getOutputStream().write(cmd.getBytes());
-				su.getOutputStream().close();
-				su.getInputStream().close();
-				su.getErrorStream().close();
+				Process su = Runtime.getRuntime().exec("su");
+				DataOutputStream outputStream = new DataOutputStream(su.getOutputStream());
+				String cmd = "chmod 666 " + device.getAbsolutePath() + "\n";
+				outputStream.write(cmd.getBytes());
+				outputStream.flush();
+				outputStream.writeBytes("exit\n");
+				outputStream.flush();
 				if(su.waitFor() != 0){Log.d(TAG,"waitFor error");};
 			if (!device.canRead()
 						|| !device.canWrite()) {
