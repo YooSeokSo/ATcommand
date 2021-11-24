@@ -17,7 +17,7 @@ import java.io.*
 
 
 class MainActivity : AppCompatActivity() {
-    var SERIAL_PORT_NANE = "/dev/smd11"
+    var SERIAL_PORT_NANE = "smd11"
     var SERIAL_BAUDRATE = 9600
     var serialPort: SerialPort? = null
     var inputStream: InputStream? = null
@@ -87,7 +87,9 @@ class MainActivity : AppCompatActivity() {
              }
          }
          btn2.setOnClickListener {
-             if(findViewById<EditText>(R.id.port).text.toString() == "") {
+             if(findViewById<TextView>(R.id.textView).text.toString() != "No Connect") {
+                 Toast.makeText(this, "이전 연결을 종료해주세요", Toast.LENGTH_SHORT).show()
+             } else if(findViewById<EditText>(R.id.port).text.toString() == "") {
                  Toast.makeText(this, "포트를 입력하세요", Toast.LENGTH_SHORT).show()
              }else{
                  try {
@@ -95,8 +97,6 @@ class MainActivity : AppCompatActivity() {
                      SERIAL_BAUDRATE = pref.getString("baudrate","9600")?.toInt()!!
                      Log.d("SerialExam", SERIAL_BAUDRATE.toString())
                      OpenSerialPort(SERIAL_PORT_NANE)
-                     StartRxThread()
-                     findViewById<TextView>(R.id.textView).text = SERIAL_PORT_NANE
                  }catch (e: IOException){
                      e.printStackTrace()
                  }
@@ -124,17 +124,19 @@ class MainActivity : AppCompatActivity() {
      }
 
     private fun OpenSerialPort(name: String) {
-//        val serialPortFinder: SerialPortFinder = SerialPortFinder()
-//        val devices: Array<String> = serialPortFinder.allDevices
-//        val devicesPath: Array<String> = serialPortFinder.allDevicesPath
-//        for (device in devices) {
-//            if (device.contains(name, true)) {
-//                val index = devices.indexOf(device)
-//                //serialPort = SerialPort(File(devicesPath[index]), SERIAL_BAUDRATE, 0)
-//                break
-//            }
-//        }
-        serialPort = SerialPort(File(name),SERIAL_BAUDRATE,0)
+        val serialPortFinder: SerialPortFinder = SerialPortFinder()
+        val devices: Array<String> = serialPortFinder.allDevices
+        val devicesPath: Array<String> = serialPortFinder.allDevicesPath
+        for (device in devices) {
+            if (device.contains(name, true)) {
+                Log.d("SerialExam",device)
+                val index = devices.indexOf(device)
+                serialPort = SerialPort(File(devicesPath[index]), SERIAL_BAUDRATE, 0)
+                findViewById<TextView>(R.id.textView).text = SERIAL_PORT_NANE
+                break
+            }
+        }
+        //serialPort = SerialPort(File(name),SERIAL_BAUDRATE,0)
         if(serialPort == null){
             Toast.makeText(this, "다른 포트를 입력하세요",Toast.LENGTH_SHORT).show()
             Log.d("SerialExam","cant open port")
@@ -144,6 +146,7 @@ class MainActivity : AppCompatActivity() {
             inputStream = it.inputStream
             outputStream = it.outputStream
         }
+        StartRxThread()
     }
 
     private fun StartRxThread() {

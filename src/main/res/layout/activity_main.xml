@@ -14,7 +14,7 @@
         android:imeOptions="actionNext"
         android:inputType="text"
         android:minHeight="48dp"
-        android:text="/dev/smd11"
+        android:text="smd11"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/button2"
         app:layout_constraintHorizontal_bias="0.48"
