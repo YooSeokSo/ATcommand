@@ -1,0 +1,25 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/Serial_header">
+
+        <ListPreference
+            app:defaultValue="9600"
+            app:entries="@array/reply_entries"
+            app:entryValues="@array/reply_values"
+            app:key="baudrate"
+            app:title="@string/signature_title"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/Log_header">
+
+        <EditTextPreference
+            app:key="directory"
+            app:title="@string/sync_title"
+            app:defaultValue="/ATLog"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

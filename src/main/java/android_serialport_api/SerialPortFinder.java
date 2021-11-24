@@ -98,7 +98,6 @@ public class SerialPortFinder {
 				// Issue 3:
 				// Since driver name may contain spaces, we do not extract driver name with split()
 				String drivername = l.substring(0, 0x15).trim();
-				Log.d(TAG,drivername);
 				String[] w = l.split(" +");
 				if ((w.length >= 5) && (w[w.length-1].equals("serial"))) {
 					Log.d(TAG, "Found new driver " + drivername + " on " + w[w.length-4]);

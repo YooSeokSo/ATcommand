@@ -25,7 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 public class SerialPort {
 
@@ -55,9 +57,8 @@ public class SerialPort {
 				if(su.waitFor() != 0){Log.d(TAG,"waitFor error");};
 			if (!device.canRead()
 						|| !device.canWrite()) {
-					//
-				throw new SecurityException();
-				}
+				return;
+			}
 			} catch (Exception e) {
 				e.printStackTrace();
 				throw new SecurityException();
