@@ -33,21 +33,6 @@ class MainActivity : AppCompatActivity() {
      override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-//         OpenSerialPort(SERIAL_PORT_NANE)
-//         StartRxThread()
-         val pref = PreferenceManager.getDefaultSharedPreferences(this)
-         try {
-             val su = Runtime.getRuntime().exec("su")
-             val outputStream = DataOutputStream(su.outputStream)
-             outputStream.writeBytes("setenforce 0\n")
-             outputStream.flush()
-             outputStream.writeBytes("exit\n")
-             outputStream.flush()
-             su.waitFor()
-         } catch (e: IOException) {
-             Toast.makeText(this,"슈퍼유저 권한이 필요합니다.",Toast.LENGTH_SHORT).show()
-             Log.d("SerialExam", "ex: $e")
-         }
          val btn = findViewById<Button>(R.id.button)
          val btn2 = findViewById<Button>(R.id.button2)
          val btn3 = findViewById<Button>(R.id.button3)
@@ -56,6 +41,35 @@ class MainActivity : AppCompatActivity() {
          val btn6 = findViewById<Button>(R.id.button7)
          scrollview = findViewById(R.id.response)
          strBuilder = StringBuilder()
+//         OpenSerialPort(SERIAL_PORT_NANE)
+//         StartRxThread()
+         val pref = PreferenceManager.getDefaultSharedPreferences(this)
+         //루트확인 및 selinux 해제
+         try {
+             val su = Runtime.getRuntime().exec("su")
+             val outputStream = DataOutputStream(su.outputStream)
+             outputStream.writeBytes("setenforce 0\n")
+             outputStream.flush()
+             outputStream.writeBytes("exit\n")
+             outputStream.flush()
+             try {
+                 su.waitFor()
+                 if (0 == su.exitValue()) {
+                     btn2.setEnabled(true)
+                     Toast.makeText(this, "슈퍼유저입니다.", Toast.LENGTH_SHORT).show()
+                 }else{
+                     Toast.makeText(this, "슈퍼유저 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+                 }
+             } catch (e: IOException){
+                 Toast.makeText(this,"슈퍼유저 권한이 필요합니다.",Toast.LENGTH_SHORT).show()
+                 Log.d("SerialExam", "ex: $e")
+             }
+
+         } catch (e: IOException) {
+             Toast.makeText(this,"슈퍼유저 권한이 필요합니다.",Toast.LENGTH_SHORT).show()
+             Log.d("SerialExam", "ex: $e")
+         }
+
          findViewById<EditText>(R.id.atcommand).setOnEditorActionListener { v, actionId, event ->
              var handled = false
              if(actionId == EditorInfo.IME_ACTION_GO){
@@ -79,10 +93,10 @@ class MainActivity : AppCompatActivity() {
 
          }
          btn.setOnClickListener {
-             if(findViewById<EditText>(R.id.port).text.toString() == ""
-                 || findViewById<EditText>(R.id.atcommand).text.toString() == ""
-                 || findViewById<TextView>(R.id.textView).text.toString() == "No Connect"){
-                 Toast.makeText(this, "포트와 커멘드를 입력하세요",Toast.LENGTH_SHORT).show()
+             if(findViewById<EditText>(R.id.atcommand).text.toString() == ""){
+                 Toast.makeText(this, "커멘드를 입력하세요",Toast.LENGTH_SHORT).show()
+             }else if(findViewById<TextView>(R.id.textView).text.toString() == "No Connect"){
+                 Toast.makeText(this, "포트가 연결되어있지 않습니다.",Toast.LENGTH_SHORT).show()
              }else{
                  try {
                      var data = findViewById<EditText>(R.id.atcommand).text.toString()
@@ -133,7 +147,7 @@ class MainActivity : AppCompatActivity() {
              findViewById<TextView>(R.id.textView2).text = ""
          }
          btn6.setOnClickListener {
-            var path = pref.getString("directory","ATLog")
+            var path = pref.getString("directory","/ATLog")
              var filename = LocalDateTime.now().toString() + ".txt"
              Log.d("SerialExam", path)
              if (path != null) {
@@ -171,7 +185,7 @@ class MainActivity : AppCompatActivity() {
                 break
             }
         }
-        //serialPort = SerialPort(File(name),SERIAL_BAUDRATE,0)
+//        serialPort = SerialPort(File(name),SERIAL_BAUDRATE,0)
         if(serialPort == null){
             Toast.makeText(this, "다른 포트를 입력하세요",Toast.LENGTH_SHORT).show()
             Log.d("SerialExam","cant open port")
@@ -224,6 +238,17 @@ class MainActivity : AppCompatActivity() {
         if(serialPort != null) {
             serialThread.interrupt()
             serialPort?.close()
+        }
+        try {
+            val su = Runtime.getRuntime().exec("su")
+            val outputStream = DataOutputStream(su.outputStream)
+            outputStream.writeBytes("setenforce 1\n")
+            outputStream.flush()
+            outputStream.writeBytes("exit\n")
+            outputStream.flush()
+            su.waitFor()
+        } catch (e: IOException) {
+            Log.d("SerialExam", "ex: $e")
         }
         super.onDestroy()
     }
