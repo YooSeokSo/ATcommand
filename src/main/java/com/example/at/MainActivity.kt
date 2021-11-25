@@ -3,17 +3,21 @@ package com.example.at
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import android_serialport_api.SerialPort
 import android_serialport_api.SerialPortFinder
+import androidx.annotation.RequiresApi
 import androidx.preference.PreferenceManager
 import com.example.SettingsActivity
 import java.io.*
+import java.time.LocalDateTime
 
 
 class MainActivity : AppCompatActivity() {
@@ -25,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var scrollview: ScrollView
     lateinit var serialThread: Thread
     lateinit var strBuilder: StringBuilder
+     @RequiresApi(Build.VERSION_CODES.O)
      override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -47,6 +52,8 @@ class MainActivity : AppCompatActivity() {
          val btn2 = findViewById<Button>(R.id.button2)
          val btn3 = findViewById<Button>(R.id.button3)
          val btn4 = findViewById<Button>(R.id.button5)
+         val btn5 = findViewById<Button>(R.id.button6)
+         val btn6 = findViewById<Button>(R.id.button7)
          scrollview = findViewById(R.id.response)
          strBuilder = StringBuilder()
          findViewById<EditText>(R.id.atcommand).setOnEditorActionListener { v, actionId, event ->
@@ -121,7 +128,35 @@ class MainActivity : AppCompatActivity() {
              val intent = Intent(this, SettingsActivity::class.java)
              startActivity(intent)
          }
+         btn5.setOnClickListener {
+             strBuilder.clear()
+             findViewById<TextView>(R.id.textView2).text = ""
+         }
+         btn6.setOnClickListener {
+            var path = pref.getString("directory","ATLog")
+             var filename = LocalDateTime.now().toString() + ".txt"
+             Log.d("SerialExam", path)
+             if (path != null) {
+                 writeTextFile(path, filename, strBuilder.toString())
+             }
+         }
      }
+    fun writeTextFile(directory:String, filename:String, content:String) {
+        // 앱 기본경로 / files / memo
+        val dir2 = File(this.getExternalFilesDir(null)?.path+directory)
+//        val dir = File(filesDir.path + "/" + directory)
+//        if(!dir.exists()) dir.mkdirs()
+//        val fullpath = dir.path + "/" + filename
+        if(!dir2.exists()) dir2.mkdirs()
+        val fullpath = dir2.path + "/" + filename
+        Log.d("SerialExam", fullpath)
+        val writer = FileWriter(fullpath)
+        val buffer = BufferedWriter(writer)
+        buffer.write(content)
+        buffer.close()
+        writer.close()
+        Toast.makeText(this,fullpath,Toast.LENGTH_SHORT).show()
+    }
 
     private fun OpenSerialPort(name: String) {
         val serialPortFinder: SerialPortFinder = SerialPortFinder()
@@ -132,7 +167,7 @@ class MainActivity : AppCompatActivity() {
                 Log.d("SerialExam",device)
                 val index = devices.indexOf(device)
                 serialPort = SerialPort(File(devicesPath[index]), SERIAL_BAUDRATE, 0)
-                findViewById<TextView>(R.id.textView).text = SERIAL_PORT_NANE
+                findViewById<TextView>(R.id.textView).text = device
                 break
             }
         }
@@ -178,7 +213,6 @@ class MainActivity : AppCompatActivity() {
         scrollview.post {
             scrollview.fullScroll(ScrollView.FOCUS_DOWN)
         }
-        Log.d("SerialExam", "rx:$strBuilder")
     }
     private fun SendData(data: String){
         try {
