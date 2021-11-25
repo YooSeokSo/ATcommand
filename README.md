@@ -1,0 +1,2 @@
+# ATcommand
+need rooting
