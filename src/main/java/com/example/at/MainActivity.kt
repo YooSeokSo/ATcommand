@@ -6,7 +6,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -40,6 +39,10 @@ class MainActivity : AppCompatActivity() {
          val btn4 = findViewById<Button>(R.id.button5)
          val btn5 = findViewById<Button>(R.id.button6)
          val btn6 = findViewById<Button>(R.id.button7)
+         scrollview = findViewById(R.id.response)
+         strBuilder = StringBuilder()
+         val pref = PreferenceManager.getDefaultSharedPreferences(this)
+
          //루트확인 및 selinux 해제
          try {
              val su = Runtime.getRuntime().exec("su")
@@ -66,16 +69,37 @@ class MainActivity : AppCompatActivity() {
              Log.d("SerialExam", "ex: $e")
          }
 
-         scrollview = findViewById(R.id.response)
-         strBuilder = StringBuilder()
+
+         //spinner 설정
          val serialPortFinder: SerialPortFinder = SerialPortFinder()
-         val devices: Array<String> = serialPortFinder.allDevices
          val devicesPath: Array<String> = serialPortFinder.allDevicesPath
          val spinner = findViewById<Spinner>(R.id.spinner2)
          spinner.adapter = ArrayAdapter<String>(this,R.layout.support_simple_spinner_dropdown_item,devicesPath)
-         val pref = PreferenceManager.getDefaultSharedPreferences(this)
+         // spinner default값 설정
+         for (device in devicesPath) {
+             if (device.contains(SERIAL_PORT_NANE, true)) {
+                 val index = devicesPath.indexOf(device)
+                 spinner.setSelection(index)
+                 break
+             }
+         }
+         // spinner 설정시 port 설정
+         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
+             override fun onNothingSelected(parent: AdapterView<*>?) {
+             }
 
+             override fun onItemSelected(
+                 parent: AdapterView<*>?,
+                 view: View?,
+                 position: Int,
+                 id: Long
+             ) {
+                 SERIAL_PORT_NANE = spinner.selectedItem.toString()
+                 Log.d("SerialExam",SERIAL_PORT_NANE)
+             }
 
+         }
+        // 키보드 엔터입력시 동작
          findViewById<EditText>(R.id.atcommand).setOnEditorActionListener { v, actionId, event ->
              var handled = false
              if(actionId == EditorInfo.IME_ACTION_GO){
@@ -96,23 +120,8 @@ class MainActivity : AppCompatActivity() {
 
              }
              handled
-
          }
-         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
-             override fun onNothingSelected(parent: AdapterView<*>?) {
-             }
-
-             override fun onItemSelected(
-                 parent: AdapterView<*>?,
-                 view: View?,
-                 position: Int,
-                 id: Long
-             ) {
-                 SERIAL_PORT_NANE = spinner.selectedItem.toString()
-                 Log.d("SerialExam",SERIAL_PORT_NANE)
-             }
-
-         }
+         // send button
          btn.setOnClickListener {
              if(findViewById<EditText>(R.id.atcommand).text.toString() == ""){
                  Toast.makeText(this, "커멘드를 입력하세요",Toast.LENGTH_SHORT).show()
@@ -128,20 +137,20 @@ class MainActivity : AppCompatActivity() {
                  }
              }
          }
+         //connect button
          btn2.setOnClickListener {
              if(findViewById<TextView>(R.id.textView).text.toString() != "No Connect") {
                  Toast.makeText(this, "이전 연결을 종료해주세요", Toast.LENGTH_SHORT).show()
              }else{
                  try {
-
                      SERIAL_BAUDRATE = pref.getString("baudrate","9600")?.toInt()!!
                      OpenSerialPort(SERIAL_PORT_NANE)
                  }catch (e: IOException){
                      e.printStackTrace()
                  }
-
              }
          }
+         //Disconnect button
          btn3.setOnClickListener {
              if(findViewById<TextView>(R.id.textView).text.toString() == "No Connect") {
                  Toast.makeText(this, "포트가 연결되어 있지 않습니다.", Toast.LENGTH_SHORT).show()
@@ -156,14 +165,17 @@ class MainActivity : AppCompatActivity() {
 
              }
          }
+         // go setting
          btn4.setOnClickListener {
              val intent = Intent(this, SettingsActivity::class.java)
              startActivity(intent)
          }
+         //clear
          btn5.setOnClickListener {
              strBuilder.clear()
              findViewById<TextView>(R.id.textView2).text = ""
          }
+         //save button
          btn6.setOnClickListener {
             var path = pref.getString("directory","/ATLog")
              var filename = LocalDateTime.now().toString() + ".txt"
@@ -172,12 +184,11 @@ class MainActivity : AppCompatActivity() {
              }
          }
      }
+
+    // save log
     fun writeTextFile(directory:String, filename:String, content:String) {
         // 앱 기본경로 / files / memo
         val dir2 = File(this.getExternalFilesDir(null)?.path+directory)
-//        val dir = File(filesDir.path + "/" + directory)
-//        if(!dir.exists()) dir.mkdirs()
-//        val fullpath = dir.path + "/" + filename
         if(!dir2.exists()) dir2.mkdirs()
         val fullpath = dir2.path + "/" + filename
         Log.d("SerialExam", fullpath)
@@ -188,7 +199,7 @@ class MainActivity : AppCompatActivity() {
         writer.close()
         Toast.makeText(this,fullpath,Toast.LENGTH_SHORT).show()
     }
-
+    // open port
     private fun OpenSerialPort(name: String) {
         val serialPortFinder: SerialPortFinder = SerialPortFinder()
         val devices: Array<String> = serialPortFinder.allDevices
@@ -201,7 +212,6 @@ class MainActivity : AppCompatActivity() {
                 break
             }
         }
-//        serialPort = SerialPort(File(name),SERIAL_BAUDRATE,0)
         if(serialPort == null){
             Toast.makeText(this, "다른 포트를 입력하세요",Toast.LENGTH_SHORT).show()
             Log.d("SerialExam","cant open port")
@@ -213,7 +223,7 @@ class MainActivity : AppCompatActivity() {
         }
         StartRxThread()
     }
-
+    //start receive data
     private fun StartRxThread() {
         if(inputStream == null){
             Log.e("SerialExam","Can't open inputstream")
@@ -231,6 +241,7 @@ class MainActivity : AppCompatActivity() {
         }
         serialThread.start()
     }
+    // make string
     @SuppressLint("SetTextI18n")
     private fun OnReceiveData(buffer: ByteArray, size: Int){
         if(size<1)return
@@ -244,6 +255,7 @@ class MainActivity : AppCompatActivity() {
             scrollview.fullScroll(ScrollView.FOCUS_DOWN)
         }
     }
+
     private fun SendData(data: String){
         try {
             outputStream?.write(data.encodeToByteArray())
@@ -251,10 +263,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        if(serialPort != null) {
-            serialThread.interrupt()
-            serialPort?.close()
-        }
         try {
             val su = Runtime.getRuntime().exec("su")
             val outputStream = DataOutputStream(su.outputStream)
@@ -265,6 +273,10 @@ class MainActivity : AppCompatActivity() {
             su.waitFor()
         } catch (e: IOException) {
             Log.d("SerialExam", "ex: $e")
+        }
+        if (serialPort != null){
+            serialThread.interrupt()
+            serialPort?.close()
         }
         super.onDestroy()
     }
