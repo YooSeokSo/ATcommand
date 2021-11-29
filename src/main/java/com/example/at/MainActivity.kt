@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
@@ -39,11 +40,6 @@ class MainActivity : AppCompatActivity() {
          val btn4 = findViewById<Button>(R.id.button5)
          val btn5 = findViewById<Button>(R.id.button6)
          val btn6 = findViewById<Button>(R.id.button7)
-         scrollview = findViewById(R.id.response)
-         strBuilder = StringBuilder()
-//         OpenSerialPort(SERIAL_PORT_NANE)
-//         StartRxThread()
-         val pref = PreferenceManager.getDefaultSharedPreferences(this)
          //루트확인 및 selinux 해제
          try {
              val su = Runtime.getRuntime().exec("su")
@@ -70,6 +66,16 @@ class MainActivity : AppCompatActivity() {
              Log.d("SerialExam", "ex: $e")
          }
 
+         scrollview = findViewById(R.id.response)
+         strBuilder = StringBuilder()
+         val serialPortFinder: SerialPortFinder = SerialPortFinder()
+         val devices: Array<String> = serialPortFinder.allDevices
+         val devicesPath: Array<String> = serialPortFinder.allDevicesPath
+         val spinner = findViewById<Spinner>(R.id.spinner2)
+         spinner.adapter = ArrayAdapter<String>(this,R.layout.support_simple_spinner_dropdown_item,devicesPath)
+         val pref = PreferenceManager.getDefaultSharedPreferences(this)
+
+
          findViewById<EditText>(R.id.atcommand).setOnEditorActionListener { v, actionId, event ->
              var handled = false
              if(actionId == EditorInfo.IME_ACTION_GO){
@@ -77,7 +83,7 @@ class MainActivity : AppCompatActivity() {
                  imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
                  handled = true
              }
-             if(findViewById<EditText>(R.id.port).text.toString() == "") {
+             if(findViewById<EditText>(R.id.atcommand).text.toString() == "") {
                  Toast.makeText(this, "커맨드를 입력해주세요", Toast.LENGTH_SHORT).show()
              }else{
                  try {
@@ -90,6 +96,21 @@ class MainActivity : AppCompatActivity() {
 
              }
              handled
+
+         }
+         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
+             override fun onNothingSelected(parent: AdapterView<*>?) {
+             }
+
+             override fun onItemSelected(
+                 parent: AdapterView<*>?,
+                 view: View?,
+                 position: Int,
+                 id: Long
+             ) {
+                 SERIAL_PORT_NANE = spinner.selectedItem.toString()
+                 Log.d("SerialExam",SERIAL_PORT_NANE)
+             }
 
          }
          btn.setOnClickListener {
@@ -110,13 +131,10 @@ class MainActivity : AppCompatActivity() {
          btn2.setOnClickListener {
              if(findViewById<TextView>(R.id.textView).text.toString() != "No Connect") {
                  Toast.makeText(this, "이전 연결을 종료해주세요", Toast.LENGTH_SHORT).show()
-             } else if(findViewById<EditText>(R.id.port).text.toString() == "") {
-                 Toast.makeText(this, "포트를 입력하세요", Toast.LENGTH_SHORT).show()
              }else{
                  try {
-                     SERIAL_PORT_NANE = findViewById<EditText>(R.id.port).text.toString()
+
                      SERIAL_BAUDRATE = pref.getString("baudrate","9600")?.toInt()!!
-                     Log.d("SerialExam", SERIAL_BAUDRATE.toString())
                      OpenSerialPort(SERIAL_PORT_NANE)
                  }catch (e: IOException){
                      e.printStackTrace()
@@ -149,7 +167,6 @@ class MainActivity : AppCompatActivity() {
          btn6.setOnClickListener {
             var path = pref.getString("directory","/ATLog")
              var filename = LocalDateTime.now().toString() + ".txt"
-             Log.d("SerialExam", path)
              if (path != null) {
                  writeTextFile(path, filename, strBuilder.toString())
              }
@@ -176,10 +193,9 @@ class MainActivity : AppCompatActivity() {
         val serialPortFinder: SerialPortFinder = SerialPortFinder()
         val devices: Array<String> = serialPortFinder.allDevices
         val devicesPath: Array<String> = serialPortFinder.allDevicesPath
-        for (device in devices) {
+        for (device in devicesPath) {
             if (device.contains(name, true)) {
-                Log.d("SerialExam",device)
-                val index = devices.indexOf(device)
+                val index = devicesPath.indexOf(device)
                 serialPort = SerialPort(File(devicesPath[index]), SERIAL_BAUDRATE, 0)
                 findViewById<TextView>(R.id.textView).text = device
                 break
